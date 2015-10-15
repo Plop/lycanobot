@@ -1,0 +1,36 @@
+diff -ru Net-old/IRC/Connection.pm Net/IRC/Connection.pm
+--- Net-old/IRC/Connection.pm	2003-12-04 14:50:16.000000000 -0800
++++ Net/IRC/Connection.pm	2008-04-29 19:16:22.000000000 -0700
+@@ -481,6 +481,8 @@
+     $handler = $self->{_handler}->{$ev};
+   } elsif (exists $_udef{$ev}) {
+     $handler = $_udef{$ev};
++  } elsif ($ev =~ /^\d{3}$/ && exists $self->{_handler}->{'other'}) {
++    $handler = $self->{_handler}->{'other'};
+   } else {
+     return $self->_default($event, @_);
+   }
+diff -ru Net-old/IRC/Event.pm Net/IRC/Event.pm
+--- Net-old/IRC/Event.pm	2003-09-23 23:33:40.000000000 -0700
++++ Net/IRC/Event.pm	2008-04-29 19:05:51.000000000 -0700
+@@ -195,7 +195,7 @@
+     shift if (ref($_[0]) || $_[0]) =~ /^Net::IRC/;
+     my $ev = shift;
+     
+-    return (exists $_names{$ev} ? $_names{$ev} : undef);
++    return (exists $_names{$ev} ? $_names{$ev} : $ev);
+ }
+ 
+ %_names = (
+diff -ru Net-old/IRC.pm Net/IRC.pm
+--- Net-old/IRC.pm	2004-04-30 11:02:51.000000000 -0700
++++ Net/IRC.pm	2008-04-29 18:51:52.000000000 -0700
+@@ -138,7 +138,7 @@
+   # we don't want to bother waiting on input or running
+   # scheduled events if we're just flushing the output queue
+   # so we bail out here
+-  return if $caller eq 'Net::IRC::flush_output_queue';
++  return if defined($caller) and $caller eq 'Net::IRC::flush_output_queue';
+ 
+   # Check the queue for scheduled events to run.
+   if(!$self->schedulequeue->is_empty) {

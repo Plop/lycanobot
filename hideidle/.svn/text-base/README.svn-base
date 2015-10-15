@@ -1,0 +1,17 @@
+
+Here are 2 InspIRCD modules that help hiding the idle time of IRC users.
+Idle time can be used to cheat: it's is given by a simple /whois,
+and allows anyone to see if someone has just said something,
+and guess he is the the secret night channel.
+
+m_hideidlechan.cpp adds the 'U' channel mode, which hides the idle time of the
+  users in that channel.
+
+m_hideidle.cpp allows users to set the 'U' user mode, which hides their
+  idle time.
+
+* Put one of them in the src/modules/ directory of InspIRCD
+* Add a <module name="m_hideidle"> (or m_hideidlechan) tag in the config file
+* Run ./configure -modupdate and make install
+* Rehash the ircd or use the /LOADMODULE command to add them
+

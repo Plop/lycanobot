@@ -1,0 +1,17 @@
+* Make a real time-based action scheduling (removing the set_timeout message
+  hack). Would be usefull for players deconnection recovery timout, and many
+  other things.
+* Automatic special cards choice, based on numbers of players and choosed theme.
+* commands : !whoami, !lastword
+* add a stats system using XML
+* say who is waking up or going to sleep (optionnal)
+* Improve the %votes so we could set things in each vote such as :
+  - hidden votes (!vote in private then announce the votes)
+  - !unvote allowed or denied
+  - vote changes allowed or denied
+* another history than Thiercelieux's one, maybe Mafia
+* Commands aliases (such as vs for votestatus, or v for vote)
+* Proper handling of selected players in votes (targets who /quit remains
+  targetted)
+* Make a logging system (maybe used by the stats one)
+
