@@ -28,7 +28,7 @@ add_job('seer',
 	'seer' => {
 	    'who'        => 'seer',
 	    'presub'     => \&pre_seer,
-	    'next'       => 'rescuer'
+	    'next'       => 'seer2'
 	}
     },
     'commands' => {

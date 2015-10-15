@@ -40,8 +40,6 @@ sub on_whoreply
 
     return if(is_ignored($nick));
 
-    $chan = lc_irc($chan);
-
     if($flags =~ /^G/) {
 	$away = 1;
     } elsif($flags =~ /^H/) {
@@ -116,9 +114,6 @@ sub on_join
     my ($conn,$event) = @_;
     my ($ircn,$ni) = ($event->user, $event->nick);
     my ($chan) = ($event->to);
-
-    $chan = lc_irc($chan);
-
     print "* join : ".$ni." (".$event->userhost.") @ ".$chan."\n";
 
     if($ni eq $CFG{'nick'}) {
@@ -138,6 +133,7 @@ sub on_join
     return if(is_ignored($ni));
 
     $chanusers{$chan}{$ni}{'op'} = 0;
+    $chanusers{$chan}{$ni}{'halfop'} = 0;
     $chanusers{$chan}{$ni}{'voiced'} = 0;
 
     if($chan eq $CFG{'day_channel'}) {
@@ -182,8 +178,6 @@ sub on_part
     my ($ni, $msg, $userhost) = ($event->nick, $event->args, $event->userhost);
     my $chan = $event->to->[0];
 
-    $chan = lc_irc($chan);
-
     # Changing night channel ?
     if(is_true($CFG{'use_random_night_channel'})
        && $ni eq $CFG{'nick'} && $chan eq $CFG{'night_channel'}) {
@@ -213,8 +207,6 @@ sub on_names
     my @users = split(' ',$list[3]);
     my @nicks;
 
-    $chan = lc_irc($chan);
-
     # Joined !
     # See who's op and voiced
     foreach (@users) {
@@ -226,21 +218,28 @@ sub on_names
 	    next if(is_ignored($_));
 	}
 
-	if(/^[\@\%&~]/) { # op (or half-op, super-op, owner)
+	if(/^[\@&~]/) { # op (or super-op, owner)
 	    $chanusers{$chan}{$ni}{'op'} = 1;
+	    $chanusers{$chan}{$ni}{'halfop'} = 0;
 	    $chanusers{$chan}{$ni}{'voiced'} = 0; # unknown but safer
 	    push(@nicks, $ni);
-	} elsif(/^\+/) {
-	    $chanusers{$chan}{$ni}{'op'} = 0;
-	    $chanusers{$chan}{$ni}{'voiced'} = 1;
-	    push(@nicks, $ni);
-	} else {
-	    $chanusers{$chan}{$_}{'op'} = 0;
-	    $chanusers{$chan}{$_}{'voiced'} = 0;
-	    push(@nicks, $_);
-	}
-    }
-
+       } elsif(/^\%/) { # halfop
+            $chanusers{$chan}{$ni}{'op'} = 0;
+           $chanusers{$chan}{$ni}{'halfop'} = 1;
+           $chanusers{$chan}{$ni}{'voiced'} = 0;
+           push(@nicks, $ni);
+       } elsif(/^\+/) { # voice
+           $chanusers{$chan}{$ni}{'op'} = 0;
+           $chanusers{$chan}{$ni}{'halfop'} = 0;
+           $chanusers{$chan}{$ni}{'voiced'} = 1;
+            push(@nicks, $ni);
+        } else {
+            $chanusers{$chan}{$_}{'op'} = 0;
+            $chanusers{$chan}{$_}{'halfop'} = 0;
+            $chanusers{$chan}{$_}{'voiced'} = 0;
+            push(@nicks, $_);
+        }
+}
 
     print "* ".@users." user(s) on ".$chan." : ".join(' ',@users)."\n";
 
@@ -267,8 +266,6 @@ sub on_mode {
     my ($chan) = ($event->to);
     my $launcher = $event->nick;
     my $moderest;
-
-    $chan = lc_irc($chan);
 
     # Avoid setting user modes here
     return if($chan eq $CFG{'nick'});
@@ -297,9 +294,13 @@ sub on_mode {
 		} elsif($mode eq '-o') {
 		    $chanusers{$chan}{$rest[0]}{'op'} = 0;
 		    # TODO : call a /who or /whois to see if this user is +/-v
-		} elsif($mode eq '+v') {
-		    $chanusers{$chan}{$rest[0]}{'voiced'} = 1;
-		} elsif($mode eq '-v') {
+                } elsif($mode eq '+h') {
+                   $chanusers{$chan}{$rest[0]}{'halfop'} = 1;
+                } elsif($mode eq '-h') {
+                   $chanusers{$chan}{$rest[0]}{'halfop'} = 0;
+                } elsif($mode eq '+v') {
+                   $chanusers{$chan}{$rest[0]}{'voiced'} = 1;
+                } elsif($mode eq '-v') {
 		    $chanusers{$chan}{$rest[0]}{'voiced'} = 0;
 		}
 	    }
@@ -345,8 +346,6 @@ sub on_kick {
     my ($kicker) = ($event->nick);
     my ($kicked) = ($event->to);
 
-    $chan = lc_irc($chan);
-
     # damn, has I been kicked ?
     if($kicked eq $CFG{'nick'}) {
 	delete $chanusers{$chan}; # Disconnected from $chan
@@ -360,8 +359,6 @@ sub on_kick {
 sub on_chan_modeinfo {
     my ($conn, $event) = @_;
     my ($from, $chan, $mode) = ($event->args); # (sender, chan, mode)
-
-    $chan = lc_irc($chan);
 
     $chanmode{$chan} = $mode;
 
@@ -433,12 +430,11 @@ sub on_public
     my ($ni)   = ($event->nick);
     my ($to)   =  $event->to;
     my $is_valid; # used if it's a command
-    # If this is a private message, answer in private
-    my $talkto = ($to eq $CFG{'nick'}) ? $ni : lc_irc($to);
+    my $talkto = $to;
+    $talkto = $ni if($to eq $CFG{'nick'}); # if in pv, answer in pv    
     my $err = sub_say({'prio' => 0, 'type' => 'error', 'to' => $talkto,
 		       'prefix' => $ni});
     my $decode_failed = 0;
-
 
     # Convert from an octet sequence assumed in $CFG{'charset'} to perl's
     # internal string.
@@ -551,9 +547,9 @@ sub on_public
 		    # We have a scalar ref, deref it to get the nick
 		    next unless(defined($$_)); # Pointed value undefined yet
 		    if ($wh eq 'from') {
-			$is_valid = ($$_ eq $ni);
+			$is_valid = (lc($$_) eq lc($ni));
 		    } else { # $wh eq 'to'
-			$is_valid = ($$_ eq $to);
+			$is_valid = (lc($$_) eq lc($to));
 		    }
 		} else {
 		    # We have a simple scalar, it's a job name
@@ -562,11 +558,11 @@ sub on_public
 			$is_valid = ($ni eq read_ply_pnick($special_jobs{$_}{'nick'}));
 		    } elsif($wh eq 'to') {
 			if($_ eq 'us') {
-			    $is_valid = ($to eq $CFG{'nick'});
+			    $is_valid = (lc($to) eq lc($CFG{'nick'}));
 			} elsif($_ eq 'day_channel') {
-			    $is_valid = (lc_irc($to) eq $CFG{'day_channel'});
+			    $is_valid = (lc($to) eq lc($CFG{'day_channel'}));
 			} elsif($_ eq 'night_channel') {
-			    $is_valid = (lc_irc($to) eq $CFG{'night_channel'});
+			    $is_valid = (lc($to) eq lc($CFG{'night_channel'}));
 			}
 		    }
 		}
@@ -654,7 +650,6 @@ sub on_notice {
     my $to     = $event->to;
     
     if($to =~ /^\#/) { # channel
-        $to = lc_irc($to);
 	print '-'.$ni.'/'.$to.'- '.$line."\n";
     } else { # from a user
 	print '-'.$ni.'- '.$line."\n";
@@ -665,6 +660,10 @@ sub on_notice {
 sub on_nick_taken {
     my ($conn, $event) = @_;
     my $ni = $CFG{'nick'};
+
+    # Pure badass hack follows
+    $::run_mode = 2; # Restart!
+    return;
 
     print "# warning : bot's nick (".$ni.") already taken, changing it "
 	 ."to ".$ni."_\n";
@@ -697,7 +696,6 @@ sub on_whoischannels {
     my ($our, $nick, $chans) = ($event->args);
 
     foreach my $chan (split(/ /,$chans)) {
-	$chan = lc_irc($chan);
 	# $chans got something like @#foo or #bar or +#beer
 	if($chan =~ /([^\#])?(.+)/) {
 	    update_chan($nick, $2, $1);
@@ -733,8 +731,6 @@ sub on_invite {
     my ($conn, $event) = @_;
     my ($chan) = $event->args;
 
-    $chan = lc_irc($chan);
-
     # If someone invites ourselves in the night channel, join it
     if($chan eq $CFG{'night_channel'} || $chan eq $CFG{'day_channel'}) {
 	$conn->join($chan);
@@ -746,8 +742,6 @@ sub on_chan_need_invite {
     my ($conn, $event) = @_;
     my ($to, $chan) = $event->args;
     my ($chanserv, $cs_message);
-
-    $chan = lc_irc($chan);
 
     # If it's the night channel, ask the chan service to invite the bot
     if($chan eq $CFG{'night_channel'}

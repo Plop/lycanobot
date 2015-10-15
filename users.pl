@@ -119,9 +119,6 @@ sub update_user_infos {
 	delete $$private{'lycainfo'}{'game_nick'};
     }
 
-    # Update the time we last saw this user
-    $$private{'lycainfo'}{'last_seen'} = int(time());
-    
     # Update his ident if possible
     if(defined($used_ident)) {
 	foreach(split(/ +/, $CFG{'ident'}->[$used_ident])) {
@@ -147,7 +144,6 @@ sub build_default_private {
     my %infos =
      ('lycainfo' => {
 	 'tuto_mode' => 1,
-	 'last_seen' => 0,
 	 'hlme'      => 'never'
 	 }
       );
@@ -313,33 +309,6 @@ sub write_user_infos {
     my %data;
     my $ident;
 
-    # Filter out outdated users
-    if ($CFG{'storing'}{'users_retention'} >= 0) {
-	my $now = time();
-	my @delete;
-	foreach my $i (0 .. $#userlist) {
-	    # Check if this user is currently present
-	    my $is_here = 0;
-	    foreach (keys(%users)) {
-		next unless(ref($users{$_}{'private'}) eq 'REF');
-		if(${$users{$_}{'private'}} eq $userlist[$i]) {
-		    $is_here = 1;
-		    last;
-		}
-	    }
-	    # If we never recorded a last_seen value,
-	    # the safest bet is to set it to "now".
-	    if ($is_here || !exists($userlist[$i]->{'lycainfo'}{'last_seen'})) {
-		$userlist[$i]->{'lycainfo'}{'last_seen'} = int($now);
-	    }
-	    # Drop that user if its retention time expired
-	    if ($userlist[$i]->{'lycainfo'}{'last_seen'} + $CFG{'storing'}{'users_retention'}*84000 <= $now) {
-		push(@delete, $i);
-	    }
-	}
-	splice(@userlist, $_, 1) foreach(@delete);
-    }
-
     # Build the data structure using the XML style
     $data{'users'}{'user'} = [ @userlist ];
     foreach (0 .. $#{$CFG{'ident'}}) {
@@ -377,7 +346,7 @@ sub read_user_infos {
 	return 0;
     }
 
-    @userlist = ref($$data{'users'}{'user'}) eq 'ARRAY' ? @{$$data{'users'}{'user'}} : ();
+    @userlist = @{$$data{'users'}{'user'}}; # Loaded :)
     print "-> Loaded ".$infos_file."\n";
     return 1;
 }

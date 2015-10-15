@@ -67,7 +67,7 @@ add_cmd_messages('protect',
       "Vous ne pouvez pas protéger le même personne deux nuits de suite." ],
     'you_protect' => # arg: the just-protected player
     [ "%s est sous votre aile pour cette nuit.",
-      "Cette nuit, les loups-garous ne pourrons rien contre %s.",
+      "Cette nuit, les loups-garous ne pourront rien contre %s.",
       "Vous placez temporairement %s hors d'atteinte des loups-garous.",
       "Vous protégez %s d'une éventuelle attaque des loups-garous." ]
 );

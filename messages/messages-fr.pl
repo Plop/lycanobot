@@ -867,7 +867,11 @@ $messages{'cmds'}{'vote'}{'example'} =
   "untel",
   "Mimamo",
   "Bliblu",
-  "Villageois" ];
+  "Villageois",
+  "Clampin",
+  "Teubé", 
+  "Zayrow",
+  "JeSuisCon" ];
 
 ## unvote
 $messages{'cmds'}{'unvote'}{'descr'} = 
@@ -911,7 +915,7 @@ $messages{'cmds'}{'unplay'}{'no_play'} =
 [ "Vous ne jouez pas encore." ];
 
 $messages{'cmds'}{'unplay'}{'play_canceled'} = 
-[ "Vous ne jourez plus.",
+[ "Vous ne jouerez plus.",
   "Vous partez honteusement de cette partie.",
   "Vous abandonnez une partie qui pourrait s'avérer interessante !",
   "Vous désertez piètrement le jeu… Auriez vous peur ?!",
@@ -1059,10 +1063,10 @@ $messages{'time_to'}{'find_werewolves'} =
   "Villageois, des traîtres continuent de vous trahir." ];
 
 $messages{'time_to'}{'play'} = 
-[ "%s vont affronter leurs talents persuasifs dans cette partie.",
-  "%s, préparez vous mentalement à cette épreuve !",
-  "%s, une dure partie va commencer.",
-  "%s, une passionnante partie est sur le point de commencer !" ]; # comma separated list of players
+[ "Rappel de l'url des règles du salon : http://thiercelieux.fr/regles.html\n%s vont affronter leurs talents persuasifs dans cette partie.",
+  "N'oubliez pas de lire les règles... http://thiercelieux.fr/regles.html\n%s, préparez vous mentalement à cette épreuve !",
+  "Prêts à jouer ? Lisez les règles d'abord ! http://thiercelieux.fr/regles.html\n%s, une dure partie va commencer.",
+  "Avant de vous plonger dans cette partie, lisez les règles : http://thiercelieux.fr/regles.html !\n%s, une passionnante partie est sur le point de commencer !" ]; # comma separated list of players
 
 
 ########################
@@ -1071,7 +1075,8 @@ $messages{'time_to'}{'play'} =
 $messages{'welcome'}{'welcome'} = 
 [ "Bienvenue sur %s ! Je suis le maître de jeu, et vous pouvez communiquer "
  ."avec moi (en privé, ou pas) à l'aide de commandes (\\chelp pour en avoir la "
- ."liste)." ];
+ ."liste).\nMerci de prendre connaissance des règles du salon : "
+ ."http://thiercelieux.fr/regles.html" ];
 
 $messages{'welcome'}{'wait_game_end'} = 
 [ "Pour l'instant, une partie est en cours. Vous devez donc attendre qu'elle "

@@ -43,11 +43,11 @@ add_generic_messages(
   "Mais tout d'abord, votons pour savoir qui sera le capitaine du village." ],
 
 'succession' => # args: the dying captain
-[ "Le capitaine mourrant %s va maintenant choisir son successeur.",
+[ "Le capitaine mourrant %s va maintenant choisir son successeur, avec la commande !give.",
   "Tout les villageois sont à l'écoute de %s, qui va dans son dernier souffle "
- ."désigner son successeur.",
+ ."désigner son successeur, avec la commande !give.",
   "Émus, les villageois se rassemblent autour de %s, et lui implorent de "
- ."nommer un nouveau capitaine." ],
+ ."nommer un nouveau capitaine, en utilisant !give." ],
 
 );
 

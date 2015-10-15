@@ -35,10 +35,10 @@ add_cmd_messages('hunt',
     'params'  => "<joueur ciblé>",
     'example' => [ "Tartempion", "Untel", "Mimamo", "Bliblu", "Villageois" ],
     'intro'   => [ "Le chasseur balaie la foule avec son fusil.\n"
-		  ."Il va maintenant tuer un joueur de son choix.",
+		  ."Il va maintenant tuer un joueur de son choix, avec la commance !hunt",
 		   "Il est temps pour le chasseur d'utiliser son fusil, une "
-		  ."dernière fois.",
-		   "Qui donc la balle du chasseur atteindra-t-elle ?" ],
+		  ."dernière fois, avec la commande !hunt",
+		   "Qui donc la balle du chasseur (!hunt) atteindra-t-elle ?" ],
 
     'you_hunted' => # arg: the hunted player
     [ "Le chasseur a descendu %s.",
@@ -47,5 +47,5 @@ add_cmd_messages('hunt',
       "La balle du chasseur traverse la tête de %s.",
       "Le chasseur utilise son ultime balle contre %s." ],
     'no_sucide' =>
-    [ "Vous ne pouvez pas vous sucider." ]
+    [ "Vous ne pouvez pas vous suicider." ]
 );

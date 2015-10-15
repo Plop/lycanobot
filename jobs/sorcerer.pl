@@ -39,7 +39,7 @@ add_job('sorcerer',
 	'sorcerer' => {
 	    'who'        => 'sorcerer',
 	    'presub'     => \&pre_sorcerer,
-	    'next'       => 'day'
+	    'next'       => 'host'
 	},
     },
     'commands' => {

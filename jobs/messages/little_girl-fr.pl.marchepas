@@ -1,0 +1,2 @@
+add_job_name_message("La petite fille");
+add_job_help_message("Vous vous cachez dans un buisson et vous espionnez les loups-garous sans réussir à voir leurs visages.");

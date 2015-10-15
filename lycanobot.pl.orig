@@ -342,7 +342,7 @@ our %files =
     ( 'basedir' => undef, # where to get others .pl files
       'homedir' => ($ENV{HOME} ||
 		    $ENV{USERPROFILE} ||
-                    '.').'/lycanobot/.lycanobot', # where to get the config
+                    '.').'/.lycanobot', # where to get the config
       'jobs'    => 'jobs', # jobs dir (relative to basedir)
       'cfg'     => undef, # config file name with its path
       'games'   => 'games.xml', # games infos file name (without its path)
@@ -352,10 +352,6 @@ our %files =
       },
       'game_sets' => {
 	  'name'  => 'settings.xml', # game current opts (without its path)
-	  'md5'   => undef # hash for caching system
-      },
-      'tbans' => {
-	  'name'  => 'tbans.dat', # users infos file name (without its path)
 	  'md5'   => undef # hash for caching system
       },
       'sync_timer' => undef # timer id for the files synchronization
@@ -428,10 +424,6 @@ exit(1) unless( read_game_sets() ); # load our %game_sets
 # We need users.pl to load the users info file
 include($files{'basedir'}."/users.pl"); # load our @userlist
 exit(1) unless( read_user_infos() );
-
-# Read pending bans
-include($files{'basedir'}."/tbans.pl");
-read_tbans();
 
 $::irc = new Net::IRC;
 sub connect_to_IRC_server {
@@ -586,7 +578,6 @@ while($::run_mode == 1) {
 $CFG{'storing'}{'sync'} = -1;
 write_game_sets();
 write_user_infos();
-write_tbans();
 
 if($::run_mode == 0) {
     $conn->quit("Terminated.");

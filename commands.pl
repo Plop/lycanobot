@@ -77,6 +77,7 @@ our %cmdlist = (
       },
   'start'  => {
       'subaddr'    => \&cmd_start,
+	  'to'         => [ 'day_channel' ],
       'phase'      => 'no_game',
       'game_cmd'   => 0
       },
@@ -145,6 +146,7 @@ our %cmdlist = (
 	
   'play' => {
       'subaddr'    => \&cmd_play,
+	  'to'         => [ 'day_channel' ],
       'phase'      => 'wait_play',
       'game_cmd'   => 0  # Allows smarter error messages
       },
@@ -157,6 +159,7 @@ our %cmdlist = (
     'votestatus' => {
       'subaddr'    => \&cmd_votestatus,
       'phase'      => [ ], # autofilled in init_game()
+	  'game_cmd'   => 0
     },
     'talkserv' => {
       'subaddr'    => \&cmd_talkserv,
@@ -183,13 +186,11 @@ our %cmdlist = (
     },
     'activate' => {
       'subaddr'    => \&cmd_activate,
-      'to'         => 'us', # private msg only
       'need_moder' => 1,
       'game_cmd'   => 0
     },
     'deactivate' => {
       'subaddr'    => \&cmd_deactivate,
-      'to'         => 'us', # private msg only
       'need_moder' => 1,
       'game_cmd'   => 0
     }
@@ -313,6 +314,15 @@ sub cmd_start {
     init_player($launcher); # at least this one wants to play
     say(P_GAMEADV, 'reply', $CFG{'day_channel'},
 	$messages{'cmds'}{'start'}{'new_game'}, $launcher);
+    if($chanusers{$CFG{'day_channel'}}{$launcher}{'op'}) {
+       $players{$launcher}{'op'} = 1;
+       if($chanusers{$CFG{'day_channel'}}{$CFG{'nick'}}{'op'}) {
+           mode(P_GAMEADV, $CFG{'day_channel'}, '-o', $launcher);
+       }
+    } elsif($chanusers{$CFG{'day_channel'}}{$launcher}{'halfop'}) {
+       $players{$launcher}{'halfop'} = 1;
+       mode(P_GAMEADV, $CFG{'day_channel'}, '-h', $launcher);
+    }
     mode(P_GAMEADV, $CFG{'day_channel'}, '+v', $launcher);
     hl_them(); # HL the ones who wanted that
     do_next_step();
@@ -799,7 +809,7 @@ sub cmd_vote {
 
     # Is auth ?
     if(exists($votes{ $phs{'current'} })) {
-	unless($to eq $CFG{ $votes{ $phs{'current'} }{'chan'} }) {
+	unless(lc($to) eq lc($CFG{ $votes{ $phs{'current'} }{'chan'} })) {
 	    &$err({'to' => $ni}, $messages{'errors'}{'not_auth'}, "vote");
 	    return 1;
 	}
@@ -826,6 +836,12 @@ sub cmd_vote {
        && $players{$ni}{'team'} eq $players{$voted_for_ni}{'team'}) {
 	&$err(merge_votemsg($messages{'votes'}{'no_teamvote'}));
 	    return 1;
+    }
+
+    # Quick and dirty hack: forbid self-votes in day phase
+    if($phs{'current'} eq 'day' && $ni eq $voted_for_ni) {
+       say(P_GAME, 'error', $ni, "Vous ne pouvez pas voter contre vous-même.");
+       return 1;
     }
 
     # Check if the vote is the same as last one
@@ -988,7 +1004,18 @@ sub cmd_play {
 	    $messages{'cmds'}{'play'}{'now_play'}) if($tuto);
     }
     init_player($ni);
+    if($chanusers{$CFG{'day_channel'}}{$ni}{'op'}) {
+       $players{$ni}{'op'} = 1;
+       if($chanusers{$CFG{'day_channel'}}{$CFG{'nick'}}{'op'}) {
+           mode(P_GAMEADV, $CFG{'day_channel'}, '-o', $ni);
+       }
+    } elsif($chanusers{$CFG{'day_channel'}}{$ni}{'halfop'}) {
+       $players{$ni}{'halfop'} = 1;
+       mode(P_GAMEADV, $CFG{'day_channel'}, '-h', $ni);
+       }
     mode(P_GAMEADV, $CFG{'day_channel'}, '+v', $ni); # playing => voice
+	say(P_GAMEADMIN, 'info', $CFG{'day_channel'}, 'Attention, il ne reste plus qu\'une place. Le prochain !play déclenchera automatiquement le commencement de la partie.') if(keys(%players)==19);
+	do_next_step() if(keys(%players)==20);
 
     return 1;
 }
@@ -1002,7 +1029,13 @@ sub cmd_unplay {
 	    $messages{'cmds'}{'unplay'}{'no_play'});
 	return 1;
     }
-
+    if($players{$ni}{'op'}) {
+       if($chanusers{$CFG{'day_channel'}}{$CFG{'nick'}}{'op'}) {
+           mode(P_GAMEADV, $CFG{'day_channel'}, '+o', $ni);
+       }
+    } elsif($players{$ni}{'halfop'}) {
+       mode(P_GAMEADV, $CFG{'day_channel'}, '+h', $ni);
+    }
     delete $players{$ni};
     mode(P_GAMEADV, $CFG{'day_channel'}, '-v', $ni);
 
@@ -1163,7 +1196,7 @@ sub real_nick {
 
     $nick =~ s/[^\[\]\\\`\{\|\}\^\-_[:alnum:]]//g;# delete forbidden nick chars
     foreach(keys(%players)) {
-	return $nick if(lc_irc($_) eq lc_irc($nick)); # Well spelled
+	return $_ if(lc_irc($_) eq lc_irc($nick)); # Well spelled
 	if(/\Q$nick/i) {
 	    push(@found, $_);
 	}

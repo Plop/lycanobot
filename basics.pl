@@ -480,14 +480,24 @@ sub do_check_win {
 
 # Called in the morning, announce the werewolves crime.
 # May have "before" or "after" hooks for other deaths.
-sub do_morning_death_announce {
+
+            sub do_morning_death_announce {
+our $dont_say_werewolves_crime;
     my $killed = read_ply_pnick(read_last_action_result('kill', 'werewolf'));
     return unless(defined($killed));
-	
-    # Announce it
-    say(P_GAMEADV, 'info', $CFG{'day_channel'},
-	$messages{'deads'}{'werevolves_kill'}, $killed);
-	
+# Announce it or not
+if (defined($dont_say_werewolves_crime)) {
+unless ($dont_say_werewolves_crime) {
+say(P_GAMEADV, 'info', $CFG{'day_channel'},
+$messages{'deads'}{'werevolves_kill'}, $killed);
+} else {
+$dont_say_werewolves_crime = 0;
+}
+}
+else {
+say(P_GAMEADV, 'info', $CFG{'day_channel'},
+$messages{'deads'}{'werevolves_kill'}, $killed);
+}
     return do_action('death_announce', $killed);
 }
 

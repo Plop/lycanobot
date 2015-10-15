@@ -24,14 +24,6 @@ use warnings;
 
 our %files;
 
-# Makes a string lowercase, according the RFC 1459 note about nicks and
-# case. Regexp from the POE::Component::IRC::Common code.
-sub lc_irc {
-    my $nick = shift;
-    $nick =~ tr/A-Z[]\\/a-z{}|/;
-    return $nick;
-}
-
 # Loads an XML config file. Args directy passed to XMLin()
 # (see perdoc XML::Simple).
 # Returns the XMLin() returned hash, or undef if an error occured (in which case
@@ -141,10 +133,6 @@ sub load_lyca_config_file {
     }
     $$dcfg{'werewolves_proportion'} = delete $$dcfg{'werewolves'}{'proportion'};
 
-    # Turn the channels lowercase for later case-insensitive string comparison
-    $$dcfg{'day_channel'} = lc_irc($$dcfg{'day_channel'});
-    $$dcfg{'night_channel'} = lc_irc($$dcfg{'night_channel'});
-    
     # Delete useless 'use' keys in ident and build an array
     # This changes from something like that:
     #     'ident' => [ { 'try' => '1', 'use' => 'user host realname' }
@@ -258,7 +246,7 @@ sub load_lyca_config_file {
 #             undef otherwise.
 sub generate_new_night_channel {
     our %CFG;
-    my @randchars = ( 'a'..'z', 0..9 );
+    my @randchars = ( 'A'..'Z', 'a'..'z', 0..9 );
     my $len = 8;
     if(defined($_[0])) {
         $CFG{'night_channel'} .= '-';
@@ -476,8 +464,7 @@ sub lyca_config_validator {
      ( 'conn' => {
 	 'night_channel' => 'str', 'day_channel' => 'str', 'active' => 'bool',
 	 'use_SSL' => 'bool', 'server' => 'str', 'port' => 'uint',
-	 'timeout' => 'uint', 'use_random_night_channel' => 'bool',
-	 'password' => ''
+	 'timeout' => 'uint', 'use_random_night_channel' => 'bool'
        },
        'identity' => {
 	   'nick' => 'str', 'irc_name' => 'str', 'user_name' => 'str',
@@ -544,7 +531,7 @@ sub lyca_config_validator {
        'sendq' => {
 	   'max_bytes_sent' => 'int', 'max_bytes_time' => 'ufloat'
        },
-       'storing' => { 'sync' => 'int', 'users_retention' => 'int' }
+       'storing' => { 'sync' => 'int' }
      );
 
     return \%lyca_validator;
@@ -731,10 +718,8 @@ sub default_lyca_config {
      | changing it for each game. For instance to "#village_night-p4FaAm13".
      | "active" set the bot awake. May be changed by the (de)activate commands.
      | "timeout" is the ping timeout limit that makes the bot to reconnect.
-     | "password" is the IRC server password (the one sent with the IRC \'PASS\'
-     | command, not NickServ or similar), leave it empty if you don\'t have one.
      | The bot had to be OP on both day_channel and night_channel. -->
-  <conn server="irc.example.net" port="6667" use_SSL="no" password=""
+  <conn server="irc.example.net" port="6667" use_SSL="no"
 	day_channel="#village" night_channel="#village_night"
 	use_random_night_channel="yes"
 	active="yes" timeout="300" />
@@ -1021,14 +1006,8 @@ sub default_lyca_config {
      | Use: -1 for full sync,
      |       0 for no sync (only on shutdown/reboot),
      |      or any time in seconds.
-     |
-     | "users_retention" The length of time (in days) Lycanobot will remembers
-     | about a user who hadn\'t joined the day channel. Put "-1" for infinite
-     | (remembers forever), "0" for no recall, or any positive number. Be
-     | careful if you set "-1" as this makes the users file to grow infinitely,
-     | and Lycanobot may hang a bit during reads and writes of this file.
   -->
-  <storing sync="3600" users_retention="90" />
+  <storing sync="3600" />
 </lycaconf>
 
 EOT

@@ -71,34 +71,6 @@ sub is_ignored {
     return grep({$_ eq $_[0]} @{$CFG{'ignore'}});
 }
 
-sub yates_fisher_shuffle {
-    my $cards = shift;
-    my $i = @$cards;
-    my $j;
-    while(--$i) {
-	$j = int rand($i+1);
-	next if $i == $j;
-	@$cards[$i,$j] = @$cards[$j,$i];
-    }
-}
-
-sub random_org_suffle {
-    my $cards = shift;
-    my $poststr = join("%0D%0A", @$cards);
-
-    # -s: silent mode, -m 6: max 6 sec hanging
-    my @randcards = split(/\n/, `curl -m 6 -s -d "rnd=new&format=plain&list=$poststr" https://www.random.org/lists/`);
-
-    if (join('', sort @randcards) eq join('', sort @$cards)) {
-	@$cards = @randcards;
-	print "-> Cards shuffled using random.org\n";
-	return 1;
-    } else {
-        print "-> Error while randomizing cards with random.org, using yates-fisher instead.\n";
-	return 0;
-    }
-}
-
 # This sub initialize a new game distributing jobs
 # to every player (so %players is reseted)
 # $1 = number of werewolves
@@ -108,6 +80,7 @@ sub initialize_players {
     my $num_werewolves = shift;
     my @cards; # cards to distribute
     my $rand;
+    my ($i,$j);
     my $num_players = keys(%players);
     my $min_ply;
     my $job;
@@ -168,8 +141,14 @@ sub initialize_players {
     }
 
     # mix up the cards :)
-    unless(random_org_suffle(\@cards)) {
-	yates_fisher_shuffle(\@cards);
+    # this shuffle @cards
+    foreach (1 .. 5) {
+	$i = @cards;
+	while(--$i) {
+	    $j = int rand($i+1);
+	    next if $i == $j;
+	    @cards[$i,$j] = @cards[$j,$i];
+	}
     }
 
     # Initialize all players, assinging each job
@@ -210,9 +189,7 @@ sub init_player {
 	'job'         => undef,
 	'team'        => undef,
 	'answered'    => 0,
-    'vote_weight' => 1,
-    'op' => 0,
-    'halfop' => 0
+	'vote_weight' => 1
 	};
     #$players{$ni}{'vote'} doesn't exists unless the player actually vote
     #$players{$ni}{'deco_timer'} doesn't exists unless the player disconnects
@@ -440,14 +417,6 @@ sub end_game {
 
     # Kill everybody and reset the game-related informations
     foreach(keys(%players)) {
-       if($players{$_}{'op'}) {
-           if($chanusers{$CFG{'day_channel'}}{$CFG{'nick'}}{'op'}) {
-              mode(P_GAMEADV, $CFG{'day_channel'}, '+o', $_);
-           }
-       } elsif($players{$_}{'halfop'}) {
-           mode(P_GAMEADV, $CFG{'day_channel'}, '+h', $_);
-       }
-
 	delete $players{$_};
     }
 
@@ -670,7 +639,7 @@ sub ressurect_ply {
 
     # Voice if needed
     if($phs{'current'} eq 'day' || $phs{'current'} eq 'wait_play'
-       || $phs{'current'} eq 'hunter' || $phs{'current'} eq 'captain') {
+       || $phs{'current'} eq 'hunter') {
 	mode(P_GAMEADV, $CFG{'day_channel'}, '+v', $ni);
     }
 }
