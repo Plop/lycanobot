@@ -31,7 +31,7 @@ no warnings 'redefine';
 sub eldest_save {
     our %phs;
     my ($cause, $target) = @_;
-	return undef if($cause eq undef);
+	return undef if(not defined $cause);
     # Werewolwes kill context ?
     return unless($cause eq 'werewolf' && $phs{'current'} eq 'werewolf');
 	return undef unless($target eq read_ply_pnick($special_jobs{'eldest'}{'nick'}));
